@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crispr-trace"
+version = "0.1.0"
+description = "An explainable SpCas9 off-target scanning tool"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["streamlit>=1.30"]
+
+[project.scripts]
+crispr-trace = "crispr_trace.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
