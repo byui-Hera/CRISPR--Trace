@@ -1,75 +1,114 @@
 # CRISPR-Trace
 
-CRISPR-Trace is an educational bioinformatics tool for scanning DNA for potential SpCas9 off-target sites. It searches both DNA strands for 20-base spacers followed by an `NGG` PAM, compares each spacer with a guide RNA, and produces an explainable heuristic score.
+CRISPR-Trace is a small website that helps people explore how CRISPR guide sequences match DNA.
 
-## Features
+## What does it do?
 
-- Forward- and reverse-strand scanning
-- SpCas9 `NGG` PAM detection
-- Mismatch position reporting
-- PAM-proximal seed-region weighting
-- Typed data models and modular package structure
-- Streamlit dashboard with CSV export
-- Unit tests for validation, scoring, and scanning
+CRISPR uses a short guide sequence to find a specific place in DNA. Sometimes the guide may also match another place. These extra matches are called **off-target sites**.
+
+CRISPR-Trace:
+
+1. Takes a DNA sequence and a 20-letter guide sequence.
+2. Looks for possible CRISPR target sites.
+3. Checks both directions of the DNA.
+4. Counts differences between the guide and each possible site.
+5. Shows the results in a simple table.
+
+The tool gives each result an easy-to-understand score. A higher score means the guide and the possible site are more similar.
+
+> This is an educational project. Its score is a simple computer estimate, not medical advice or a replacement for laboratory testing.
+
+## Website preview
+
+The website has three simple parts:
+
+- **Analyzer:** enter DNA and view possible matches.
+- **How it works:** learn how the tool checks the sequence.
+- **About:** read about the project and its limitations.
 
 ## Project structure
 
 ```text
 CRISPR--Trace/
-├── app.py                 # Streamlit dashboard
-├── pyproject.toml         # Package metadata and dependencies
-├── requirements.txt       # Runtime dependency list
+├── web/
+│   ├── index.html       # Website content
+│   ├── styles.css       # Website colors and layout
+│   ├── app.js           # Website interactions
+│   └── favicon.svg       # Browser tab logo
 ├── src/crispr_trace/
-│   ├── cli.py             # Command-line interface
-│   ├── models.py          # CandidateSite dataclass
-│   ├── scanner.py         # PAM scanning and analysis pipeline
-│   ├── scoring.py         # Mismatch and heuristic scoring
-│   └── sequence.py        # DNA validation and strand utilities
-└── tests/
-    └── test_scanner.py    # Automated tests
+│   ├── api.py           # Connects the website to Python
+│   ├── scanner.py       # Finds possible DNA sites
+│   ├── scoring.py       # Counts differences and creates scores
+│   ├── sequence.py      # Checks DNA input
+│   └── models.py        # Stores result information
+├── tests/
+│   └── test_scanner.py  # Checks that the code works
+├── app.py               # Optional Streamlit version
+└── pyproject.toml       # Project setup
 ```
 
-## Setup
+## How to run it
 
-Create and activate a virtual environment, then install the project in editable mode:
+### 1. Install the project
+
+Open PowerShell in the project folder and run:
 
 ```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
 python -m pip install -e .
 ```
 
-Run the tests:
+### 2. Start the Python backend
+
+Open one PowerShell window and run:
+
+```powershell
+crispr-api
+```
+
+The backend does the DNA analysis.
+
+### 3. Start the website
+
+Open a second PowerShell window and run:
+
+```powershell
+python -m http.server 5501 --bind 127.0.0.1 --directory web
+```
+
+Then open this address in your browser:
+
+```text
+http://127.0.0.1:5501
+```
+
+### Start everything with one script
+
+You can also start the API, website, and browser together:
+
+```powershell
+.\start_website.ps1
+```
+
+## How to try it
+
+Use these example values:
+
+```text
+DNA sequence:
+TTTACGTACGTACGTACGTACGTAGGCCC
+
+Guide sequence:
+ACGTACGTACGTACGTACGT
+```
+
+Click **Analyze sequence** to see the results.
+
+## Run the tests
 
 ```powershell
 python -m unittest discover -s tests
 ```
 
-Launch the dashboard:
-
-```powershell
-python -m streamlit run app.py
-```
-
-Run the command-line interface:
-
-```powershell
-crispr-trace
-```
-
-## Scoring model
-
-The current score is intentionally transparent rather than clinically validated. Mismatches in positions 12–19 of the guide are treated as PAM-proximal seed mismatches and receive a larger penalty than mismatches elsewhere.
-
-This tool is for software and bioinformatics education. It is not a clinical decision-support system or a replacement for experimental validation.
-
-## Example input
-
-```text
-Target DNA: TTTACGTACGTACGTACGTACGTAGGCCC
-Guide RNA:  ACGTACGTACGTACGTACGT
-```
-
 ## Resume description
 
-> Built CRISPR-Trace, a modular Python/Streamlit bioinformatics application that scans both DNA strands for SpCas9 off-target candidates, reports PAM and mismatch features, applies an explainable seed-region scoring heuristic, and exports analysis results for review.
+> Built CRISPR-Trace, a full-stack Python and JavaScript bioinformatics website that checks both DNA strands for possible CRISPR off-target matches, explains mismatch-based scores, and presents results in a clear interactive interface.
