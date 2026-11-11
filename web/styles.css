@@ -49,6 +49,24 @@ small { color: var(--muted); font-size: .75rem; }
 .message { min-height: 24px; padding-top: 20px; color: var(--muted); font-weight: 650; }
 .message.error { color: var(--red); }
 .results { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 30px; }
+.visual-dashboard { border-top: 1px solid var(--line); margin-top: 36px; padding-top: 34px; }
+.result-banner { display: flex; gap: 14px; align-items: flex-start; padding: 18px 20px; border-radius: 12px; margin-bottom: 22px; }
+.result-banner.good { background: var(--mint); color: var(--green-dark); }
+.result-banner.warning { background: #f8e8e5; color: #87483f; }
+.result-banner strong { display: block; margin-bottom: 4px; }
+.result-banner p { margin: 0; font-size: .88rem; line-height: 1.5; }
+.visual-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 16px; }
+.visual-heading h3 { margin: 0; font-size: 1.2rem; }
+.visual-heading p { color: var(--muted); font-size: .82rem; margin: 4px 0 0; }
+.helix-card { background: #fbfdfb; border: 1px solid var(--line); border-radius: 14px; padding: 14px; overflow: hidden; }
+.helix-card svg { display: block; width: 100%; height: auto; min-height: 180px; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; color: var(--muted); font-size: .78rem; }
+.legend-item { display: inline-flex; align-items: center; gap: 7px; }
+.legend-swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.legend-target { background: var(--green); }
+.legend-danger { background: var(--red); }
+.legend-possible { background: var(--amber); }
+.legend-low { background: #b8c4be; }
 .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0 28px; }
 .summary-card { padding: 18px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); }
 .summary-card strong { display: block; font-size: 1.8rem; letter-spacing: -.05em; }
@@ -66,6 +84,9 @@ code { background: var(--mint); color: var(--green-dark); padding: 3px 6px; bord
 .risk-high { background: #fde5e2; color: var(--red); }
 .risk-medium { background: #fff1d8; color: var(--amber); }
 .risk-low { background: var(--mint); color: var(--green-dark); }
+.risk-target { background: var(--mint); color: var(--green-dark); }
+.risk-danger { background: #fde5e2; color: var(--red); }
+.risk-possible { background: #fff1d8; color: var(--amber); }
 .download { margin-top: 18px; background: transparent; border: 1px solid var(--green); color: var(--green-dark); }
 .method-section { padding: 150px 0; }
 .method-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 48px; }

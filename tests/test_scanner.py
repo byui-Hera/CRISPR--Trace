@@ -37,6 +37,7 @@ class TestScanner(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["mismatches"], 0)
         self.assertEqual(results[0]["strand"], "+")
+        self.assertEqual(results[0]["classification"], "Intended target")
 
 
 if __name__ == "__main__":

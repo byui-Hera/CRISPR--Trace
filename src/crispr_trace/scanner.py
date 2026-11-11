@@ -29,13 +29,26 @@ def analyze_sequence(sequence: str, guide: str) -> list[dict]:
     for index, spacer, pam in _sites_on_strand(sequence):
         positions = mismatch_positions(guide, spacer)
         score, risk_level = score_site(positions)
-        candidates.append(CandidateSite(index, spacer, pam, "+", len(positions), positions, score, risk_level))
+        classification = _classify_site(len(positions), score)
+        candidates.append(CandidateSite(index, spacer, pam, "+", len(positions), positions, score, risk_level, classification))
 
     reverse_sequence = reverse_complement(sequence)
     for index, spacer, pam in _sites_on_strand(reverse_sequence):
         positions = mismatch_positions(guide, spacer)
         score, risk_level = score_site(positions)
         original_position = len(sequence) - (index + GUIDE_LENGTH + PAM_LENGTH)
-        candidates.append(CandidateSite(original_position, spacer, pam, "-", len(positions), positions, score, risk_level))
+        classification = _classify_site(len(positions), score)
+        candidates.append(CandidateSite(original_position, spacer, pam, "-", len(positions), positions, score, risk_level, classification))
 
     return [candidate.to_dict() for candidate in candidates]
+
+
+def _classify_site(mismatch_count: int, score: float) -> str:
+    """Give users a plain-English interpretation of each candidate."""
+    if mismatch_count == 0:
+        return "Intended target"
+    if score >= 0.75:
+        return "Dangerous off-target"
+    if score >= 0.4:
+        return "Possible off-target"
+    return "Lower-risk off-target"

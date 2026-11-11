@@ -12,9 +12,14 @@ CRISPR-Trace:
 2. Looks for possible CRISPR target sites.
 3. Checks both directions of the DNA.
 4. Counts differences between the guide and each possible site.
-5. Shows the results in a simple table.
+5. Shows the results in a simple table and visual DNA map.
 
-The tool gives each result an easy-to-understand score. A higher score means the guide and the possible site are more similar.
+The website uses simple colors to explain the results:
+
+- **Green — Intended target:** the guide matches the site exactly.
+- **Red — Dangerous off-target:** the guide is very similar to another site.
+- **Amber — Possible off-target:** the guide has more differences.
+- **Gray — Lower-risk off-target:** the guide has many differences.
 
 > This is an educational project. Its score is a simple computer estimate, not medical advice or a replacement for laboratory testing.
 

@@ -15,6 +15,7 @@ class CandidateSite:
     mismatch_positions: tuple[int, ...]
     score: float
     risk_level: str
+    classification: str
 
     def to_dict(self) -> dict:
         """Convert the model to a dashboard/export-friendly dictionary."""
@@ -27,4 +28,5 @@ class CandidateSite:
             "mismatch_positions": list(self.mismatch_positions),
             "score": self.score,
             "risk_level": self.risk_level,
+            "classification": self.classification,
         }
