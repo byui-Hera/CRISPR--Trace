@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="CRISPR-Trace off-target sequence analysis" />
+    <meta name="description" content="Explore potential CRISPR off-target matches with an explainable sequence analysis tool." />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="apple-touch-icon" href="favicon.svg" />
     <title>CRISPR-Trace | Off-target analysis</title>
@@ -18,6 +18,7 @@
       </a>
       <nav class="nav-links" aria-label="Primary navigation">
         <a href="#analyzer">Analyzer</a>
+        <a href="#mutations">Mutation review</a>
         <a href="#method">Method</a>
         <a href="#about">About</a>
       </nav>
@@ -25,37 +26,37 @@
 
     <main id="top">
       <section class="hero section-shell">
-        <div class="eyebrow">A SIMPLE CRISPR EXPLORER</div>
-        <h1>See where a guide<br /><span>might also bind.</span></h1>
+      <div class="eyebrow">EXPLAINABLE SEQUENCE ANALYSIS</div>
+        <h1>Find where a guide<br /><span>might also match.</span></h1>
         <p class="hero-copy">
-          CRISPR-Trace looks through a DNA sequence for places where a CRISPR guide
-          could attach by accident. Results are easy to read and simple to compare.
+          CRISPR-Trace scans DNA for candidate sites that resemble a guide RNA,
+          then shows the mismatches and score behind each result.
         </p>
-        <a class="button button-primary" href="#analyzer">Open analyzer <span>↓</span></a>
+        <a class="button button-primary" href="#analyzer">Start analysis <span>↓</span></a>
       </section>
 
       <section id="analyzer" class="section-shell analyzer-section">
         <div class="section-heading">
           <div>
             <div class="eyebrow">01 · TRY IT</div>
-            <h2>Check a DNA sequence</h2>
+          <h2>Analyze a DNA sequence</h2>
           </div>
-          <span id="api-status" class="status-pill"><span class="status-dot"></span> Checking connection…</span>
+          <span id="api-status" class="status-pill"><span class="status-dot"></span> Checking analyzer…</span>
         </div>
 
         <form id="analysis-form" class="analysis-form">
           <div class="field-group field-large">
-            <label for="target-dna">DNA sequence to check</label>
+            <label for="target-dna">DNA sequence</label>
             <textarea id="target-dna" required>TTTACGTACGTACGTACGTACGTAGGCCC</textarea>
-            <small>Paste letters A, C, G, and T</small>
+            <small>Enter a sequence using A, C, G, and T.</small>
           </div>
           <div class="field-group">
-            <label for="guide-rna">Your guide sequence</label>
+            <label for="guide-rna">Guide RNA sequence</label>
             <input id="guide-rna" value="ACGTACGTACGTACGTACGT" required />
-            <small>Use exactly 20 letters</small>
+            <small>Enter the 20-base guide sequence.</small>
           </div>
           <button class="button button-primary analyze-button" type="submit">
-            Analyze sequence <span>→</span>
+            Analyze DNA <span>→</span>
           </button>
         </form>
 
@@ -64,26 +65,63 @@
         <div id="visual-dashboard" class="visual-dashboard" hidden></div>
       </section>
 
+      <section id="mutations" class="section-shell mutation-section">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">02 · REVIEW A CHANGE</div>
+            <h2>Understand a mutation</h2>
+          </div>
+          <span class="status-pill"><span class="status-dot"></span> Educational heuristic</span>
+        </div>
+        <p class="section-intro">
+          Compare a reference sequence with a mutated version to see what changed,
+          where it sits relative to a guide, and what to review next.
+        </p>
+        <form id="mutation-form" class="mutation-form">
+          <div class="field-group">
+            <label for="reference-dna">Reference DNA</label>
+            <textarea id="reference-dna" required>TTTACGTACGTACGTACGTACGTAGGCCC</textarea>
+            <small>The original sequence, using A, C, G, and T.</small>
+          </div>
+          <div class="field-group">
+            <label for="mutated-dna">Mutated DNA</label>
+            <textarea id="mutated-dna" required>TTTACGTACGTACGTACGTTCGTAGGCCC</textarea>
+            <small>Use the same-length sequence for substitution review.</small>
+          </div>
+          <div class="field-group field-guide">
+            <label for="mutation-guide">Guide RNA sequence</label>
+            <input id="mutation-guide" value="ACGTACGTACGTACGTACGT" required />
+            <small>Used to locate the guide match in the reference.</small>
+          </div>
+          <button class="button button-primary analyze-button" type="submit">
+            Review mutation <span>→</span>
+          </button>
+        </form>
+        <div id="mutation-message" class="message" role="status" aria-live="polite"></div>
+        <div id="mutation-results" class="mutation-results" hidden></div>
+      </section>
+
       <section id="method" class="section-shell method-section">
-        <div class="eyebrow">02 · HOW IT WORKS</div>
-        <h2>Four simple steps.</h2>
+        <div class="eyebrow">03 · HOW IT WORKS</div>
+        <h2>Four steps, clearly explained.</h2>
         <div class="method-grid">
-          <article><span>01</span><h3>Clean the input</h3><p>We check that the DNA uses valid letters and that the guide has 20 bases.</p></article>
-          <article><span>02</span><h3>Find possible sites</h3><p>We look on both DNA strands for an NGG pattern, a short signpost for a possible CRISPR target.</p></article>
-          <article><span>03</span><h3>Compare the match</h3><p>We count where the guide and each possible site are different.</p></article>
-          <article><span>04</span><h3>Explain the score</h3><p>Differences near the PAM matter more, so those sites receive a lower score.</p></article>
+          <article><span>01</span><h3>Validate the input</h3><p>We confirm that the DNA uses valid bases and that the guide is 20 bases long.</p></article>
+          <article><span>02</span><h3>Scan both strands</h3><p>We find candidate spacers next to an NGG PAM, a required pattern for this SpCas9 model.</p></article>
+          <article><span>03</span><h3>Count mismatches</h3><p>We compare each candidate with the guide and record exactly where they differ.</p></article>
+          <article><span>04</span><h3>Apply the score</h3><p>Mismatches near the PAM-proximal seed are weighted more heavily in the heuristic score.</p></article>
         </div>
       </section>
 
       <section id="about" class="section-shell about-section">
         <div>
-          <div class="eyebrow">03 · ABOUT</div>
-          <h2>Made to make a complex idea easier to see.</h2>
+          <div class="eyebrow">04 · ABOUT</div>
+          <h2>A clearer way to inspect potential off-targets.</h2>
         </div>
         <p>
-          CRISPR is a tool scientists use to guide changes in DNA. This project
-          focuses on one question: could the guide also match somewhere else?
-          It is a learning tool, not a medical recommendation.
+          CRISPR-Trace is an educational project built around one question:
+          where else might a guide sequence match? It makes the comparison visible
+          without hiding the reasoning behind a single number. It is not a clinical
+          predictor or a substitute for experimental validation.
         </p>
       </section>
     </main>

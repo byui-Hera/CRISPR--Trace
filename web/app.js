@@ -1,21 +1,28 @@
-const API_URL = "http://127.0.0.1:8000/api/analyze";
+const localHosts = ["", "localhost", "127.0.0.1"];
+const API_ORIGIN = localHosts.includes(window.location.hostname)
+  ? "http://127.0.0.1:8000"
+  : "";
+const API_URL = `${API_ORIGIN}/api/analyze`;
 
 const form = document.querySelector("#analysis-form");
 const message = document.querySelector("#message");
 const resultsContainer = document.querySelector("#results");
 const visualDashboard = document.querySelector("#visual-dashboard");
 const apiStatus = document.querySelector("#api-status");
+const mutationForm = document.querySelector("#mutation-form");
+const mutationMessage = document.querySelector("#mutation-message");
+const mutationResults = document.querySelector("#mutation-results");
 
 checkApiStatus();
 
 async function checkApiStatus() {
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/health");
+    const response = await fetch(`${API_ORIGIN}/api/health`);
     if (!response.ok) throw new Error();
-    apiStatus.innerHTML = '<span class="status-dot"></span> Ready to check';
+    apiStatus.innerHTML = '<span class="status-dot"></span> Ready to analyze';
     apiStatus.classList.remove("offline");
   } catch {
-    apiStatus.innerHTML = '<span class="status-dot"></span> Start the analyzer';
+    apiStatus.innerHTML = '<span class="status-dot"></span> Analyzer unavailable';
     apiStatus.classList.add("offline");
   }
 }
@@ -23,7 +30,7 @@ async function checkApiStatus() {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   message.classList.remove("error");
-  message.textContent = "Checking both DNA strands…";
+  message.textContent = "Analyzing both DNA strands…";
   resultsContainer.hidden = true;
   visualDashboard.hidden = true;
 
@@ -41,14 +48,133 @@ form.addEventListener("submit", async (event) => {
 
     message.textContent = payload.candidate_count
       ? "Analysis complete."
-      : "No valid NGG PAM sites were found.";
+      : "No candidate sites with an NGG PAM were found.";
     renderResults(payload.results, targetDna.length);
   } catch (error) {
     message.classList.add("error");
-    message.textContent = "The analysis service is not running. Start it with: crispr-api";
+    message.textContent = error.message === "Failed to fetch"
+      ? "The analyzer is unavailable. Start the API, then try again."
+      : error.message;
     checkApiStatus();
   }
 });
+
+mutationForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  mutationMessage.classList.remove("error");
+  mutationMessage.textContent = "Comparing the two sequences…";
+  mutationResults.hidden = true;
+
+  try {
+    const reference = normalizeDna(document.querySelector("#reference-dna").value);
+    const mutated = normalizeDna(document.querySelector("#mutated-dna").value);
+    const guide = normalizeDna(document.querySelector("#mutation-guide").value);
+    if (reference.length !== mutated.length) {
+      throw new Error("Reference and mutated DNA must be the same length for this review.");
+    }
+    if (guide.length !== 20) {
+      throw new Error("Guide RNA must be exactly 20 bases long.");
+    }
+    renderMutationReview(reference, mutated, guide);
+    mutationMessage.textContent = "Review complete. Start with the risk and consequence summary below.";
+  } catch (error) {
+    mutationMessage.classList.add("error");
+    mutationMessage.textContent = error.message;
+  }
+});
+
+function normalizeDna(value) {
+  const sequence = value.toUpperCase().replace(/\s+/g, "");
+  if (!sequence) throw new Error("DNA sequences cannot be empty.");
+  if (!/^[ACGT]+$/.test(sequence)) {
+    throw new Error("DNA may contain only A, C, G, and T.");
+  }
+  return sequence;
+}
+
+function renderMutationReview(reference, mutated, guide) {
+  const changes = [];
+  for (let index = 0; index < reference.length; index += 1) {
+    if (reference[index] !== mutated[index]) {
+      changes.push({ position: index + 1, from: reference[index], to: mutated[index] });
+    }
+  }
+
+  if (!changes.length) {
+    mutationResults.innerHTML = mutationSummary(
+      "No sequence change detected",
+      "low",
+      "Risk is low for this comparison because the reference and mutated sequences are identical.",
+      "There is no observed base substitution to interpret.",
+      "Confirm that you entered the intended reference and mutated sequences."
+    );
+    mutationResults.hidden = false;
+    return;
+  }
+
+  const guideStart = reference.indexOf(guide);
+  const guideEnd = guideStart + guide.length;
+  const inGuide = guideStart >= 0
+    ? changes.filter((change) => change.position - 1 >= guideStart && change.position - 1 < guideEnd)
+    : [];
+  const pamStart = guideEnd;
+  const referencePam = guideStart >= 0 ? reference.slice(pamStart, pamStart + 3) : "";
+  const mutatedPam = guideStart >= 0 ? mutated.slice(pamStart, pamStart + 3) : "";
+  const pamChanged = referencePam !== mutatedPam;
+  const pamDisrupted = referencePam.length === 3 && referencePam[1] === "G" && referencePam[2] === "G" && mutatedPam !== referencePam;
+  const pamCreated = referencePam !== mutatedPam && mutatedPam.length === 3 && mutatedPam[1] === "G" && mutatedPam[2] === "G";
+
+  let risk = "low";
+  let riskText = "The observed change is outside the guide match, so this review does not flag a direct guide-level effect.";
+  if (pamDisrupted || pamCreated) {
+    risk = "high";
+    riskText = pamDisrupted
+      ? "The mutation changes an NGG PAM next to the guide match, which may disrupt recognition."
+      : "The mutation creates an NGG PAM next to the guide match, which may create a new candidate site.";
+  } else if (inGuide.length) {
+    risk = "medium";
+    riskText = `${inGuide.length} mutation${inGuide.length === 1 ? "" : "s"} fall${inGuide.length === 1 ? "s" : ""} inside the guide match and may change binding. `;
+  }
+
+  const changeList = changes.map((change) => `<li>Position ${change.position}: <code>${change.from} → ${change.to}</code></li>`).join("");
+  const pamNote = guideStart >= 0
+    ? `<p class="mutation-note">Reference PAM: <code>${referencePam || "not found"}</code> · Mutated PAM: <code>${mutatedPam || "not found"}</code></p>`
+    : `<p class="mutation-note">The guide sequence was not found exactly in the reference, so PAM impact could not be localized.</p>`;
+  const solution = risk === "high"
+    ? "Review the altered guide/PAM relationship with a broader off-target scan and experimental validation before drawing conclusions."
+    : risk === "medium"
+      ? "Re-run the sequence analyzer with the mutated DNA and compare candidate scores; consider an alternative guide if the change is important."
+      : "Review nearby sequence context and scan both versions if you need to rule out newly created candidate sites.";
+
+  mutationResults.innerHTML = `
+    <div class="mutation-summary ${risk}">
+      <span class="mutation-risk-label">${risk.toUpperCase()} REVIEW PRIORITY</span>
+      <h3>${risk === "high" ? "PAM or guide match changed" : risk === "medium" ? "Guide match changed" : "No direct guide-level change detected"}</h3>
+      <p>${riskText}</p>
+    </div>
+    <div class="mutation-grid">
+      <article class="mutation-card"><span>WHAT CHANGED</span><h3>${changes.length} substitution${changes.length === 1 ? "" : "s"}</h3><ul>${changeList}</ul>${pamNote}</article>
+      <article class="mutation-card"><span>POSSIBLE CONSEQUENCE</span><h3>${pamChanged ? "PAM context changed" : inGuide.length ? "Guide similarity changed" : "No localized effect"}</h3><p>${riskText}</p></article>
+      <article class="mutation-card solution-card"><span>NEXT STEP</span><h3>Validate and compare</h3><p>${solution}</p></article>
+    </div>
+    <p class="mutation-disclaimer">This is a sequence-level educational heuristic, not a clinical risk assessment or proof of biological effect.</p>
+  `;
+  mutationResults.hidden = false;
+}
+
+function mutationSummary(title, risk, riskText, consequence, solution) {
+  return `
+    <div class="mutation-summary ${risk}">
+      <span class="mutation-risk-label">${risk.toUpperCase()} REVIEW PRIORITY</span>
+      <h3>${title}</h3><p>${riskText}</p>
+    </div>
+    <div class="mutation-grid">
+      <article class="mutation-card"><span>POSSIBLE CONSEQUENCE</span><h3>No difference to interpret</h3><p>${consequence}</p></article>
+      <article class="mutation-card solution-card"><span>NEXT STEP</span><h3>Confirm the inputs</h3><p>${solution}</p></article>
+    </div>
+    <p class="mutation-disclaimer">This is a sequence-level educational heuristic, not a clinical risk assessment or proof of biological effect.</p>
+  `;
+}
 
 function renderResults(results, sequenceLength) {
   if (!results.length) return;
@@ -95,30 +221,35 @@ function renderResults(results, sequenceLength) {
 }
 
 function getClassification(result) {
-  if (result.classification) return result.classification;
+  const labels = {
+    "Dangerous off-target": "Higher-similarity candidate",
+    "Possible off-target": "Moderate-similarity candidate",
+    "Lower-risk off-target": "Lower-similarity candidate",
+  };
+  if (result.classification) return labels[result.classification] || result.classification;
   if (result.mismatches === 0) return "Intended target";
-  if (result.score >= 0.75) return "Dangerous off-target";
-  if (result.score >= 0.4) return "Possible off-target";
-  return "Lower-risk off-target";
+  if (result.score >= 0.75) return "Higher-similarity candidate";
+  if (result.score >= 0.4) return "Moderate-similarity candidate";
+  return "Lower-similarity candidate";
 }
 
 function classificationClass(classification) {
   if (classification === "Intended target") return "target";
-  if (classification === "Dangerous off-target") return "danger";
-  if (classification === "Possible off-target") return "possible";
+  if (classification === "Higher-similarity candidate") return "danger";
+  if (classification === "Moderate-similarity candidate") return "possible";
   return "low";
 }
 
 function renderVisualDashboard(results, sequenceLength) {
   const targetCount = results.filter((result) => getClassification(result) === "Intended target").length;
-  const dangerousCount = results.filter((result) => getClassification(result) === "Dangerous off-target").length;
-  const bannerClass = dangerousCount ? "warning" : "good";
-  const bannerTitle = dangerousCount
-    ? `${dangerousCount} dangerous off-target${dangerousCount === 1 ? "" : "s"} to review`
-    : "No dangerous off-targets found";
-  const bannerText = dangerousCount
-    ? "Red areas show close matches that deserve attention. Green shows the intended target."
-    : "The intended target is shown in green. Other matches are lower-scoring in this analysis.";
+  const highSimilarityCount = results.filter((result) => getClassification(result) === "Higher-similarity candidate").length;
+  const bannerClass = highSimilarityCount ? "warning" : "good";
+  const bannerTitle = highSimilarityCount
+    ? `${highSimilarityCount} higher-similarity candidate${highSimilarityCount === 1 ? "" : "s"} to review`
+    : "No higher-similarity candidates found";
+  const bannerText = highSimilarityCount
+    ? "Red areas show close matches for review. Green shows an exact guide match."
+    : "The exact guide match is shown in green. Other matches are lower-scoring in this analysis.";
 
   visualDashboard.innerHTML = `
     <div class="result-banner ${bannerClass}">
@@ -130,9 +261,9 @@ function renderVisualDashboard(results, sequenceLength) {
     <div class="helix-card">${buildHelixSvg(results, sequenceLength)}</div>
     <div class="legend">
       <span class="legend-item"><i class="legend-swatch legend-target"></i> Intended target</span>
-      <span class="legend-item"><i class="legend-swatch legend-danger"></i> Dangerous off-target</span>
-      <span class="legend-item"><i class="legend-swatch legend-possible"></i> Possible off-target</span>
-      <span class="legend-item"><i class="legend-swatch legend-low"></i> Lower-risk or unmarked DNA</span>
+      <span class="legend-item"><i class="legend-swatch legend-danger"></i> Higher-similarity candidate</span>
+      <span class="legend-item"><i class="legend-swatch legend-possible"></i> Moderate-similarity candidate</span>
+      <span class="legend-item"><i class="legend-swatch legend-low"></i> Lower-similarity candidate</span>
     </div>
   `;
   visualDashboard.hidden = false;

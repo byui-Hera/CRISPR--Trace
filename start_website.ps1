@@ -2,28 +2,57 @@ $ErrorActionPreference = "Stop"
 
 $project = Split-Path -Parent $MyInvocation.MyCommand.Path
 $python = $null
-$knownPythonPaths = @(
+$pythonCandidates = @(
     "$env:LocalAppData\Programs\Python\Python312\python.exe",
     "$env:LocalAppData\Programs\Python\Python311\python.exe",
     "$env:LocalAppData\Programs\Python\Python310\python.exe"
 )
 
-foreach ($candidate in $knownPythonPaths) {
+foreach ($candidate in $pythonCandidates) {
     if (Test-Path -LiteralPath $candidate) {
-        $python = $candidate
-        break
+        try {
+            & $candidate --version *> $null
+            if ($LASTEXITCODE -eq 0) {
+                $python = $candidate
+                break
+            }
+        } catch {
+            # Try the next installed Python instead of failing on a stale path.
+        }
     }
 }
 
 if (-not $python) {
     $pythonCommand = Get-Command python.exe -ErrorAction SilentlyContinue
     if ($pythonCommand) {
-        $python = $pythonCommand.Source
+        try {
+            & $pythonCommand.Source --version *> $null
+            if ($LASTEXITCODE -eq 0) {
+                $python = $pythonCommand.Source
+            }
+        } catch {
+            $python = $null
+        }
     }
 }
 
 if (-not $python) {
     throw "Python was not found. Install Python or activate your virtual environment first."
+}
+
+Write-Host "Using Python: $python"
+
+try {
+    & $python -c "import fastapi, uvicorn"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Python dependencies are missing."
+    }
+} catch {
+    Write-Host "Installing project dependencies..."
+    & $python -m pip install -e $project
+    if ($LASTEXITCODE -ne 0) {
+        throw "Dependencies could not be installed. Run '$python -m pip install -e `"$project`"' to see the full error."
+    }
 }
 
 function Test-LocalPort([int]$port) {

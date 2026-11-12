@@ -1,8 +1,12 @@
 """FastAPI service for the CRISPR-Trace web frontend."""
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from starlette.staticfiles import StaticFiles
 
 from .scanner import analyze_sequence
 
@@ -27,6 +31,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+WEB_DIR = Path(__file__).resolve().parents[2] / "web"
+
 
 @app.get("/api/health")
 def health_check() -> dict[str, str]:
@@ -44,6 +50,14 @@ def analyze(request: AnalysisRequest) -> dict:
         "candidate_count": len(results),
         "results": results,
     }
+
+
+@app.get("/", include_in_schema=False)
+def website() -> FileResponse:
+    return FileResponse(WEB_DIR / "index.html")
+
+
+app.mount("/", StaticFiles(directory=WEB_DIR), name="website")
 
 
 def main() -> None:

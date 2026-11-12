@@ -33,7 +33,7 @@ st.markdown(
 
 with st.sidebar:
     st.markdown("## 🧬 CRISPR-Trace")
-    st.caption("Explainable SpCas9 off-target analysis")
+    st.caption("Explainable CRISPR sequence analysis")
     st.divider()
     st.markdown("### Current model")
     st.markdown(
@@ -49,8 +49,8 @@ st.markdown(
     """
     <div class="hero">
       <div class="eyebrow">Bioinformatics analysis tool</div>
-      <h1>Find CRISPR off-target candidates.</h1>
-      <p>Scan a DNA sequence, compare candidate spacers against a guide RNA, and inspect an explainable mismatch score across both strands.</p>
+      <h1>Explore potential off-target matches.</h1>
+      <p>Scan a DNA sequence, compare candidate spacers with a guide RNA, and see how mismatches across both strands shape each score.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -61,22 +61,22 @@ analyzer_tab, methodology_tab, project_tab = st.tabs(
 )
 
 with analyzer_tab:
-    st.subheader("Run an analysis")
+    st.subheader("Analyze a DNA sequence")
     input_col, guide_col = st.columns([2, 1])
 
     with input_col:
         target = st.text_area(
-            "Target DNA sequence",
+            "DNA sequence",
             value="TTTACGTACGTACGTACGTACGTAGGCCC",
             height=120,
-            help="Use DNA bases A, C, G, and T. Longer sequences can contain multiple candidates.",
+            help="Enter a sequence using A, C, G, and T. Longer sequences can contain multiple candidates.",
         )
 
     with guide_col:
         guide = st.text_input(
             "Guide RNA sequence",
             value="ACGTACGTACGTACGTACGT",
-            help="The current model expects exactly 20 bases.",
+            help="Enter the 20-base guide sequence.",
         )
         analyze = st.button("Analyze sequence", type="primary", use_container_width=True)
 
@@ -87,7 +87,7 @@ with analyzer_tab:
             st.error(str(error))
         else:
             if not results:
-                st.warning("No valid NGG PAM sites were found in either strand.")
+                st.warning("No candidate sites with an NGG PAM were found in either strand.")
             else:
                 counts = Counter(result["risk_level"] for result in results)
                 st.subheader("Analysis summary")
@@ -173,8 +173,8 @@ with methodology_tab:
 with project_tab:
     st.subheader("Why this project exists")
     st.markdown(
-        "CRISPR-Trace demonstrates how sequence algorithms, software engineering, "
-        "data visualization, and scientific communication can work together in one portfolio project."
+        "CRISPR-Trace makes a sequence-matching workflow easier to inspect. It brings "
+        "together algorithms, software engineering, data visualization, and scientific communication in one educational project."
     )
     st.markdown("**Engineering highlights**")
     st.markdown(

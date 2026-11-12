@@ -1,5 +1,7 @@
 # CRISPR-Trace
 
+![Quality checks](https://img.shields.io/badge/quality-automated-brightgreen)
+
 CRISPR-Trace is a small website that helps people explore how CRISPR guide sequences match DNA.
 
 ## What does it do?
@@ -16,10 +18,10 @@ CRISPR-Trace:
 
 The website uses simple colors to explain the results:
 
-- **Green — Intended target:** the guide matches the site exactly.
-- **Red — Dangerous off-target:** the guide is very similar to another site.
-- **Amber — Possible off-target:** the guide has more differences.
-- **Gray — Lower-risk off-target:** the guide has many differences.
+- **Green — Intended target:** the guide matches the candidate exactly.
+- **Red — Higher-similarity candidate:** the guide has few differences from the site.
+- **Amber — Moderate-similarity candidate:** the guide has several differences.
+- **Gray — Lower-similarity candidate:** the guide has many differences.
 
 > This is an educational project. Its score is a simple computer estimate, not medical advice or a replacement for laboratory testing.
 
@@ -28,6 +30,7 @@ The website uses simple colors to explain the results:
 The website has three simple parts:
 
 - **Analyzer:** enter DNA and view possible matches.
+- **Mutation review:** compare a reference sequence with a mutated version and identify what to review next.
 - **How it works:** learn how the tool checks the sequence.
 - **About:** read about the project and its limitations.
 
@@ -100,6 +103,16 @@ http://127.0.0.1:5501
 
 For a public portfolio link, the website and API must be deployed to an online hosting service first.
 
+### Deploy with Render
+
+The repository includes `render.yaml` for a single Render web service. It serves the website and API from the same public URL, so the browser does not need a localhost API address.
+
+1. Create a new **Blueprint** in [Render](https://render.com/) and connect this GitHub repository.
+2. Select `render.yaml` when Render asks for the infrastructure definition.
+3. Create the service and wait for the `/api/health` check to pass.
+
+The resulting Render URL is the public website and API endpoint.
+
 ### Start everything with one script
 
 You can also start the API, website, and browser together:
@@ -122,13 +135,26 @@ Guide sequence:
 ACGTACGTACGTACGTACGT
 ```
 
-Click **Analyze sequence** to see the results.
+Click **Analyze DNA** to see candidate sites. Use **Mutation review** to compare a reference sequence with a same-length mutated sequence and review the possible guide/PAM consequences.
 
 ## Run the tests
 
 ```powershell
 python -m unittest discover -s tests
 ```
+
+## Automated quality checks
+
+GitHub Actions runs automatically on every push and pull request. It checks:
+
+- Python unit tests
+- Python lint checks with Ruff
+- Installed dependency validation
+- Python compilation
+- JavaScript syntax
+- A small benchmark smoke test
+
+This helps catch broken code before it reaches the website.
 
 ## Run the benchmark
 
