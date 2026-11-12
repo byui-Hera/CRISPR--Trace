@@ -31,6 +31,14 @@ The website has three simple parts:
 - **How it works:** learn how the tool checks the sequence.
 - **About:** read about the project and its limitations.
 
+## Open the website
+
+When the local servers are running, open the website here:
+
+[Open CRISPR-Trace locally](http://127.0.0.1:5501)
+
+This link works only on the computer running the project. For a link that works for recruiters viewing GitHub, the website must be deployed online.
+
 ## Project structure
 
 ```text
@@ -48,6 +56,8 @@ CRISPR--Trace/
 │   └── models.py        # Stores result information
 ├── tests/
 │   └── test_scanner.py  # Checks that the code works
+├── scripts/
+│   └── benchmark.py      # Measures runtime at different DNA sizes
 ├── app.py               # Optional Streamlit version
 └── pyproject.toml       # Project setup
 ```
@@ -80,11 +90,15 @@ Open a second PowerShell window and run:
 python -m http.server 5501 --bind 127.0.0.1 --directory web
 ```
 
-Then open this address in your browser:
+Then open this local address in your browser:
 
 ```text
 http://127.0.0.1:5501
 ```
+
+> `127.0.0.1` means “this computer.” It is only for local testing and will not work as a public GitHub link. Port `8000` is the private API, not the website homepage.
+
+For a public portfolio link, the website and API must be deployed to an online hosting service first.
 
 ### Start everything with one script
 
@@ -93,6 +107,8 @@ You can also start the API, website, and browser together:
 ```powershell
 .\start_website.ps1
 ```
+
+On Windows, you can double-click `open_website.cmd` to start everything with one action.
 
 ## How to try it
 
@@ -112,6 +128,26 @@ Click **Analyze sequence** to see the results.
 
 ```powershell
 python -m unittest discover -s tests
+```
+
+## Run the benchmark
+
+The benchmark creates repeatable test sequences and measures how long the scanner takes to analyze them:
+
+```powershell
+python scripts/benchmark.py
+```
+
+Example output will include sequence length, number of candidate sites, median runtime, and fastest/slowest runtime. To test custom sizes:
+
+```powershell
+python scripts/benchmark.py --lengths 1000 10000 1000000 --repeats 3
+```
+
+For machine-readable output:
+
+```powershell
+python scripts/benchmark.py --json
 ```
 
 ## Resume description

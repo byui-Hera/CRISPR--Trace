@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 
-
 @dataclass(frozen=True)
 class CandidateSite:
     """A candidate 20-base spacer adjacent to an NGG PAM."""
@@ -16,6 +15,7 @@ class CandidateSite:
     score: float
     risk_level: str
     classification: str
+    
 
     def to_dict(self) -> dict:
         """Convert the model to a dashboard/export-friendly dictionary."""
