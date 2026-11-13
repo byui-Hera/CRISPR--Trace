@@ -1,5 +1,6 @@
 const localHosts = ["", "localhost", "127.0.0.1"];
-const API_ORIGIN = localHosts.includes(window.location.hostname)
+const isLocalEnvironment = localHosts.includes(window.location.hostname);
+const API_ORIGIN = isLocalEnvironment
   ? "http://127.0.0.1:8000"
   : "";
 const API_URL = `${API_ORIGIN}/api/analyze`;
@@ -16,13 +17,20 @@ const mutationResults = document.querySelector("#mutation-results");
 checkApiStatus();
 
 async function checkApiStatus() {
+  if (!isLocalEnvironment) {
+    apiStatus.innerHTML = '<span class="status-dot"></span> Mutation review ready';
+    apiStatus.classList.remove("offline");
+    apiStatus.classList.add("neutral");
+    return;
+  }
   try {
     const response = await fetch(`${API_ORIGIN}/api/health`);
     if (!response.ok) throw new Error();
     apiStatus.innerHTML = '<span class="status-dot"></span> Ready to analyze';
-    apiStatus.classList.remove("offline");
+    apiStatus.classList.remove("offline", "neutral");
   } catch {
     apiStatus.innerHTML = '<span class="status-dot"></span> Analyzer unavailable';
+    apiStatus.classList.remove("neutral");
     apiStatus.classList.add("offline");
   }
 }

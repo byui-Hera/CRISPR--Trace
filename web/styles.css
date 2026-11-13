@@ -38,6 +38,8 @@ h2 { font-size: clamp(2rem, 4vw, 3.2rem); letter-spacing: -.06em; margin: 12px 0
 .status-dot { display: inline-block; width: 7px; height: 7px; background: var(--green); border-radius: 50%; margin-right: 6px; }
 .status-pill.offline { background: #f8e8e5; color: var(--red); }
 .status-pill.offline .status-dot { background: var(--red); }
+.status-pill.neutral { background: var(--paper); color: var(--muted); }
+.status-pill.neutral .status-dot { background: var(--muted); }
 .analysis-form { display: grid; grid-template-columns: 1.5fr 1fr auto; align-items: end; gap: 18px; }
 .field-group { display: flex; flex-direction: column; gap: 8px; }
 label { font-weight: 750; font-size: .88rem; }
