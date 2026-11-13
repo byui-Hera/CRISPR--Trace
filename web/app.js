@@ -18,7 +18,7 @@ checkApiStatus();
 
 async function checkApiStatus() {
   if (!isLocalEnvironment) {
-    apiStatus.innerHTML = '<span class="status-dot"></span> Mutation review ready';
+    apiStatus.innerHTML = '<span class="status-dot"></span> Browser analyzer ready';
     apiStatus.classList.remove("offline");
     apiStatus.classList.add("neutral");
     return;
@@ -59,13 +59,66 @@ form.addEventListener("submit", async (event) => {
       : "No candidate sites with an NGG PAM were found.";
     renderResults(payload.results, targetDna.length);
   } catch (error) {
-    message.classList.add("error");
-    message.textContent = error.message === "Failed to fetch"
-      ? "The analyzer is unavailable. Start the API, then try again."
-      : error.message;
-    checkApiStatus();
+    try {
+      const localResults = analyzeLocally(targetDna, guideRna);
+      message.classList.remove("error");
+      message.textContent = "Analysis complete in browser mode. Review the candidate sites below.";
+      renderResults(localResults, targetDna.length);
+    } catch (localError) {
+      message.classList.add("error");
+      message.textContent = localError.message || error.message;
+      checkApiStatus();
+    }
   }
 });
+
+function analyzeLocally(targetDna, guideRna) {
+  const sequence = normalizeDna(targetDna);
+  const guide = normalizeDna(guideRna);
+  if (guide.length !== 20) throw new Error("Guide RNA must be exactly 20 bases long.");
+
+  const candidates = [];
+  const scan = (strandSequence, strand, positionFor) => {
+    for (let index = 0; index <= strandSequence.length - 23; index += 1) {
+      const spacer = strandSequence.slice(index, index + 20);
+      const pam = strandSequence.slice(index + 20, index + 23);
+      if (pam[1] !== "G" || pam[2] !== "G") continue;
+      const mismatchPositions = [...spacer].reduce((positions, base, position) => {
+        if (base !== guide[position]) positions.push(position);
+        return positions;
+      }, []);
+      const seedMismatches = mismatchPositions.filter((position) => position >= 12).length;
+      const nonSeedMismatches = mismatchPositions.length - seedMismatches;
+      const score = Math.max(0.1, Math.round((1 - 0.2 * seedMismatches - 0.1 * nonSeedMismatches) * 100) / 100);
+      const riskLevel = score >= 0.75 ? "High" : score >= 0.4 ? "Medium" : "Low";
+      const classification = mismatchPositions.length === 0
+        ? "Intended target"
+        : score >= 0.75 ? "Dangerous off-target"
+          : score >= 0.4 ? "Possible off-target" : "Lower-risk off-target";
+      candidates.push({
+        position: positionFor(index),
+        spacer,
+        pam,
+        strand,
+        mismatches: mismatchPositions.length,
+        mismatch_positions: mismatchPositions,
+        score,
+        risk_level: riskLevel,
+        classification,
+      });
+    }
+  };
+
+  scan(sequence, "+", (index) => index);
+  const reverseSequence = reverseComplement(sequence);
+  scan(reverseSequence, "-", (index) => sequence.length - (index + 23));
+  return candidates;
+}
+
+function reverseComplement(sequence) {
+  const complements = { A: "T", C: "G", G: "C", T: "A" };
+  return [...sequence].reverse().map((base) => complements[base]).join("");
+}
 
 mutationForm.addEventListener("submit", (event) => {
   event.preventDefault();
